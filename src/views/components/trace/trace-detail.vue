@@ -30,14 +30,19 @@
         </select>
         <svg class="icon vm grey link-hover cp ml-5" @click="handleClick(current.traceIds)">
             <use xlink:href="#review-list"></use>
-        </svg>        
+        </svg>
       </div>
 
+      <a class="rk-btn mr-5 sm r" :class="{'ghost':displayMode !== 'logs'}" @click="displayMode = 'logs'">
+        <svg class="icon vm sm rk-trace-table_svg-icon">
+          <use xlink:href="#epic"></use>
+        </svg> logs
+      </a>
       <a class="rk-btn mr-5 sm r" :class="{'ghost':displayMode !== 'table'}" @click="displayMode = 'table'">
          <svg class="icon vm sm rk-trace-table_svg-icon">
-          <use xlink:href="#table"></use>
-        </svg>
-        {{$t('table')}}</a>          
+           <use xlink:href="#table"></use>
+         </svg>
+        {{$t('table')}}</a>
       <a class="rk-btn mr-5 sm r" :class="{'ghost':displayMode !== 'tree'}" @click="displayMode = 'tree'">
         <svg class="icon vm sm">
           <use xlink:href="#issue-child"></use>
@@ -49,14 +54,15 @@
         </svg>
         {{$t('list')}}</a>
 
-            
+
       <div class="rk-tag mr-5">{{this.$t('start')}}</div><span class="mr-15 sm">{{parseInt(current.start) | dateformat}}</span>
       <div class="rk-tag mr-5">{{this.$t('duration')}}</div><span class="mr-15 sm">{{current.duration}} ms</span>
       <div class="rk-tag mr-5">{{this.$t('spans')}}</div><span class="sm">{{spans.length}}</span>
     </div>
     <TraceDetailChartList v-if="displayMode == 'list'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
-    <TraceDetailChartTree v-if="displayMode == 'tree'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>    
-    <TraceDetailChartTable v-if="displayMode == 'table'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>    
+    <TraceDetailChartTree v-if="displayMode == 'tree'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
+    <TraceDetailChartTable v-if="displayMode == 'table'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
+    <TraceDetailChartLogs v-if="displayMode == 'logs'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
 
     <div v-if="!current.endpointNames" class="flex-h container">
       <svg class="icon rk-icon-trace">
@@ -71,11 +77,12 @@ import { Vue, Component, Prop } from 'vue-property-decorator';
 import TraceDetailChartList from './trace-detail-chart-list.vue';
 import TraceDetailChartTree from './trace-detail-chart-tree.vue';
 import TraceDetailChartTable from './trace-detail-chart-table.vue';
+import TraceDetailChartLogs from './trace-detail-chart-logs.vue';
 import { Trace, Span } from '@/types/trace';
 import { Action, State } from 'vuex-class';
 import copy from '@/utils/copy';
 
-@Component({ components: { TraceDetailChartList, TraceDetailChartTree, TraceDetailChartTable } })
+@Component({ components: { TraceDetailChartList, TraceDetailChartTree, TraceDetailChartTable, TraceDetailChartLogs } })
 export default class TraceDetail extends Vue {
   @State('rocketbot') private rocketbot: any;
   @Action('rocketTrace/GET_TRACE_SPANS') private GET_TRACE_SPANS: any;
@@ -131,4 +138,8 @@ export default class TraceDetail extends Vue {
   width: 11px;
   height: 11px;
 }
+    .trace-detail-chart-logs {
+        display: flex;
+        height: 100%;
+    }
 </style>

@@ -14,25 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-module.exports = {
-  devServer: {
-    disableHostCheck: true,
-    proxy: {
-      '/graphql': {
-        target: 'http://127.0.0.1:12800',
-        changeOrigin: true,
-      },
-    },
-  },
-  chainWebpack: config => {
-    const svgRule = config.module.rule('svg');
-    svgRule.uses.clear();
-    svgRule
-      .use('svg-sprite-loader')
-      .loader('svg-sprite-loader')
-      .options({
-        symbolId: '[name]',
-      });
-  },
+const timestampToTime = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const Y = date.getFullYear() + '-';
+  const M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
+  const D = date.getDate() + ' ';
+  const h = date.getHours() + ':';
+  const m = date.getMinutes() + ':';
+  const s = date.getSeconds();
+  return Y + M + D + h + m + s;
 };
+
+export default timestampToTime;
