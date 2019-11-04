@@ -77,9 +77,13 @@
                 if (!arr || arr.length === 0) {
                     return [];
                 }
+                const allLogs = [];
                 //数据：{name: '{服务名}', nodes: [{日志节点数据}]}
-                const serviceLogs = [];
-                const serviceMap = {};
+                const serviceLogs = [{
+                    'name': 'ALL',
+                    nodes: allLogs
+                }];
+                const serviceMap = {'ALL': allLogs};
                 for (const item of arr) {
                     if (item.endpointName && (item.endpointName.startsWith('log/') || item.logs && item.logs.length > 0)) {
                         let serviceCode = item.serviceCode;
@@ -93,6 +97,7 @@
                             serviceMap[serviceCode] = serviceNodeLogs;
                         }
                         serviceNodeLogs.nodes.push(item);
+                        allLogs.push(item);
                     }
                 }
 

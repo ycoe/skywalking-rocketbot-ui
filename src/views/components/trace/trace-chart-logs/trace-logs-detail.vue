@@ -17,15 +17,15 @@
 <template>
     <div class="trace-logs-tabs">
         <ul class="trace-logs-tabs-title scroll_hide">
-            <li v-for="serviceNode in logsData" :class="{'active': serviceNode.name === currentServiceName}"
+            <li v-for="serviceNode in logsData" :class="{'active': serviceNode.name === currentServiceName, 'hasError': hasErrorLog(serviceNode.nodes)}"
                 @click="showLogs(serviceNode.name, serviceNode.nodes)">
                 {{serviceNode.name}} ({{serviceNode.nodes.length}})
             </li>
         </ul>
         <div class="trace-logs-list">
             <template v-for="serviceNode of currentLogs">
-                <div class="log-item" v-for="item of serviceNode.logs" :class="{'error': item.event === 'error'}">
-                    <pre>{{timeFormat(item.time)}} [{{item.event}}] {{item.logName}}<template v-if="!item.stack">{{item.message}}</template>{{item.stack}}</pre>
+                <div class="log-item" v-for="item of serviceNode.logList" :class="{'error': item.event === 'error'}">
+                    <pre>{{timestampToTime(item.time)}} [{{item.event}}] {{item.logName}}<template v-if="!item.stack">{{item.message}}</template>{{item.stack}}</pre>
                 </div>
             </template>
         </div>
@@ -54,6 +54,9 @@
         background: rgba(0, 0, 0, 0.04);
     }
 
+    .trace-logs-tabs-title > li.hasError {
+        color:red;
+    }
     .trace-logs-tabs-title > li.active {
         background: #ededed;
     }
@@ -115,18 +118,27 @@
             };
         },
         methods: {
+            timestampToTime,
             toggle() {
                 this.displayChildren = !this.displayChildren;
             },
             showSelectSpan() {
                 this.$eventBus.$emit('HANDLE-SELECT-SPAN', this.data);
             },
+            hasErrorLog(nodes) {
+                let hasError = false;
+                nodes.forEach(node => {
+                   node.logList.forEach(log => {
+                        if (log.event === 'error') {
+                            hasError = true;
+                        }
+                   });
+                });
+                return hasError;
+            },
             showLogs(serviceName, logs) {
                 this.currentServiceName = serviceName;
                 this.currentLogs = logs;
-            },
-            timeFormat(timestamp) {
-                return timestampToTime(timestamp);
             },
 
             dataFormat(serviceNodes) {
@@ -152,8 +164,7 @@
                             logInfo.time = span.startTime;
                             logs.push(logInfo);
                         });
-                        span.logs = logs;
-
+                        span.logList = logs;
                     });
                 });
 
