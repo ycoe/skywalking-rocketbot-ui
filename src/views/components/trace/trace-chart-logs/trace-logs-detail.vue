@@ -127,8 +127,8 @@
             },
             hasErrorLog(nodes) {
                 let hasError = false;
-                nodes.forEach(node => {
-                   node.logList.forEach(log => {
+                nodes.forEach((node) => {
+                   node.logList.forEach((log) => {
                         if (log.event === 'error') {
                             hasError = true;
                         }
