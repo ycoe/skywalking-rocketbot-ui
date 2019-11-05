@@ -14,32 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/skywalking-base:6.4.0 AS build
+#!/bin/bash
 
-WORKDIR skywalking
+set -e
 
-RUN set -eux; \
-    rm -rf "config"; rm -rf "oap-libs"; \
-    rm -rf "agent";
+export LOGGING_CONFIG="webapp/logback.xml"
 
-COPY docker-entrypoint.sh .
-COPY logback.xml webapp/
+[[ ! -z "$SW_OAP_ADDRESS" ]] && export COLLECTOR_RIBBON_LISTOFSERVERS=${SW_OAP_ADDRESS} && echo "COLLECTOR_RIBBON_LISTOFSERVERS=$COLLECTOR_RIBBON_LISTOFSERVERS"
+[[ ! -z "$SW_TIMEOUT" ]] && export COLLECTOR_RIBBON_READTIMEOUT=${SW_TIMEOUT} && echo "COLLECTOR_RIBBON_READTIMEOUT=$COLLECTOR_RIBBON_READTIMEOUT"
 
-FROM openjdk:8-jre-alpine
-
-ENV JAVA_OPTS=" -Xms256M " \
-    SW_OAP_ADDRESS="oap.ip.fdd:12800" \
-    SW_TIMEOUT="20000"
-
-LABEL maintainer="hanahmily@apache.org"
-
-COPY --from=build /skywalking /skywalking
-
-WORKDIR skywalking
-
-RUN apk add --no-cache \
-    bash
-
-EXPOSE 8080
-
-ENTRYPOINT ["bash", "docker-entrypoint.sh"]
+exec java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -jar webapp/skywalking-webapp.jar "$@"
