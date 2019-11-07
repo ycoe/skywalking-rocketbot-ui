@@ -24,7 +24,7 @@
       </svg>
     </div>
     <TraceContainer>
-      <Item v-for="(item, index) in tableData"  :data="item"  :key="'key'+ index" />
+      <Item v-for="(item, index) in tableData" :data="item" :show-logs="showLogs" :key="'key'+ index" />
     </TraceContainer>
     <rk-sidebox :width="'50%'" :show.sync="showDetail" :title="$t('spanInfo')">
       <div class="rk-trace-detail">
@@ -86,15 +86,15 @@ export default {
     Item,
     TraceContainer,
   },
-  props: ['data', 'traceId'],
+  props: ['data', 'traceId', 'showLogs'],
   watch: {
     data(val, oldVal) {
       if (!this.data.length) {
-        return;
+          return;
       }
       this.tableData = this.formatData(this.changeTree());
       this.loading = false;
-    },
+    }
   },
   data() {
     return {

@@ -51,7 +51,7 @@
         </div>
       </div>
     <div v-show="data.children && data.children.length > 0 && displayChildren" class="children-trace">
-        <item v-for="(item, index) in data.children" :key="index" :data="item"> </item>
+        <item v-for="(item, index) in data.children" v-if="!(item.label.startsWith('log/') && !showLogs)" :show-logs="showLogs" :key="index" :data="item"> </item>
     </div>
   </div>
 
@@ -131,7 +131,7 @@
 import moment from 'dayjs';
 export default {
   name: 'item',
-  props: ['data'],
+  props: ['data', 'showLogs'],
   data() {
     return {
       displayChildren: true,

@@ -21,7 +21,7 @@
       <span class="time-charts-item mr-10" v-for="(i,index) in list" :key="i" :style="`color:${computedScale(index)}`">
          <svg class="icon vm mr-5 sm">
             <use xlink:href="#issue-open-m"></use>
-          </svg> 
+          </svg>
         <span>{{i}}</span>
       </span>
     </transition-group>
@@ -75,7 +75,7 @@ import _ from 'lodash';
 /* eslint-disable */
 /* tslint:disable */
 export default {
-  props: ['data', 'traceId'],
+  props: ['data', 'traceId', 'showLogs'],
   data(){
     return {
       segmentId:[],
@@ -86,10 +86,10 @@ export default {
   },
   watch: {
     data() {
-      if(!this.data.length) {return;}
-      d3.select('.trace-tree-inner').selectAll('svg').selectAll('svg').remove();
-      this.changeTree();
-      this.tree.init({label:`${this.traceId}`, children: this.segmentId}, this.data);
+      this.buildTree();
+    },
+    showLogs() {
+      this.buildTree();
     }
   },
   mounted() {
@@ -103,6 +103,12 @@ export default {
   },
   methods: {
     copy,
+    buildTree(){
+      if(!this.data.length) {return;}
+      d3.select('.trace-tree-inner').selectAll('svg').selectAll('svg').remove();
+      this.changeTree();
+      this.tree.init({label:`${this.traceId}`, children: this.segmentId}, this.data);
+    },
     handleSelectSpan(i) {
       this.currentSpan = i.data;
       this.showDetail = true;
@@ -199,6 +205,9 @@ export default {
           }
         });
         [...fixSpans, ...this.data].forEach(i => {
+          if (!this.showLogs && i.type === 'Local' && i.label && i.label.startsWith('log/')) {
+              return;
+          }
           i.label=i.endpointName || 'no operation name';
           i.children = [];
           if(segmentGroup[i.segmentId] === undefined){

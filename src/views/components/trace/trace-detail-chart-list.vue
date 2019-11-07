@@ -74,7 +74,7 @@ import * as d3 from 'd3';
 import Trace from './d3-trace';
 import _ from 'lodash';
 export default {
-  props: ['data', 'traceId'],
+  props: ['data', 'traceId', 'showLogs'],
   data() {
     return {
       segmentId: [],
@@ -84,18 +84,15 @@ export default {
       loading: true,
     };
   },
+
   watch: {
     data() {
-      if (!this.data.length) { return; }
-      this.loading = true;
-      this.changeTree();
-      this.tree.init({label: 'TRACE_ROOT', children: this.segmentId}, this.data);
-      this.tree.draw(() => {
-        setTimeout(() => {
-          this.loading = false;
-        }, 200);
-      });
+      this.buildTree();
     },
+
+    showLogs() {
+      this.buildTree();
+    }
   },
   beforeDestroy() {
     d3.selectAll('.d3-tip').remove();
@@ -112,6 +109,17 @@ export default {
   },
   methods: {
     copy,
+    buildTree(){
+        if (!this.data.length) { return; }
+        this.loading = true;
+        this.changeTree();
+        this.tree.init({label: 'TRACE_ROOT', children: this.segmentId}, this.data);
+        this.tree.draw(() => {
+            setTimeout(() => {
+                this.loading = false;
+            }, 200);
+        });
+    },
     handleSelectSpan(i) {
       this.currentSpan = i.data;
       this.showDetail = true;
@@ -147,6 +155,7 @@ export default {
       const segmentHeaders = [];
       this.data.forEach((span) => {
         if (span.parentSpanId === -1) {
+          //如果是每个segment的第一个节点
           segmentHeaders.push(span);
         } else {
           const index = this.data.findIndex((i) => (
@@ -234,12 +243,15 @@ export default {
         }
       });
       [...fixSpans, ...this.data].forEach((i) => {
-        i.label = i.endpointName || 'no operation name';
-        i.children = [];
-        if (segmentGroup[i.segmentId] === undefined) {
-          segmentIdGroup.push(i.segmentId);
-          segmentGroup[i.segmentId] = [];
-          segmentGroup[i.segmentId].push(i);
+        if (!this.showLogs && i.type === 'Local' && i.label && i.label.startsWith('log/')) {
+            return;
+          }
+          i.label = i.endpointName || 'no operation name';
+          i.children = [];
+          if (segmentGroup[i.segmentId] === undefined) {
+            segmentIdGroup.push(i.segmentId);
+            segmentGroup[i.segmentId] = [];
+            segmentGroup[i.segmentId].push(i);
         } else {
           segmentGroup[i.segmentId].push(i);
         }
@@ -348,7 +360,7 @@ export default {
   overflow: auto;
   padding: 10px 30px;
   position: relative;
-  min-height: 150px;  
+  min-height: 150px;
 }
 .trace-node .group {
   cursor: pointer;

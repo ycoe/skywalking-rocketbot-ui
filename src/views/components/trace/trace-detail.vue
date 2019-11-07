@@ -35,6 +35,11 @@
           </svg>
           <span class="grey">复制此调用链路链接</span>
         </div>
+
+        <div class="inline-display ml-10 cp" v-if="displayMode!=='logs'" :class="{'grey': !showLogs}" @click="showLogs = !showLogs">
+          <svg data-v-fba9a75c="" class="icon vm sm rk-trace-table_svg-icon"><use data-v-fba9a75c="" xlink:href="#epic"></use></svg>
+          显示日志节点
+        </div>
       </div>
 
       <a class="rk-btn mr-5 sm r" :class="{'ghost':displayMode !== 'logs'}" @click="setDisplayMode('logs')">
@@ -66,9 +71,9 @@
       <div class="rk-tag mr-5">{{this.$t('spans')}}</div>
       <span class="sm">{{spans.length}}</span>
     </div>
-    <TraceDetailChartList v-if="displayMode == 'list'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
-    <TraceDetailChartTree v-if="displayMode == 'tree'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
-    <TraceDetailChartTable v-if="displayMode == 'table'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
+    <TraceDetailChartList v-if="displayMode == 'list'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]" :showLogs="showLogs"/>
+    <TraceDetailChartTree v-if="displayMode == 'tree'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]" :showLogs="showLogs"/>
+    <TraceDetailChartTable v-if="displayMode == 'table'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]" :showLogs="showLogs"/>
     <TraceDetailChartLogs v-if="displayMode == 'logs'&&current.endpointNames" :data="spans" :traceId="current.traceIds[0]"/>
 
     <div v-if="!current.endpointNames" class="flex-h container">
@@ -96,6 +101,7 @@
     @Prop() private spans!: Span[];
     @Prop() private current!: Trace;
     private mode: boolean = true;
+    private showLogs: boolean = false;
     private displayMode: string = 'list';
 
     private setDisplayMode(displayMode: string) {
@@ -104,13 +110,17 @@
 
     private handleClick(ids: any) {
       if (ids.length > 0) {
-        copy(`${window.location.origin}/trace?traceId=${ids[0]}&displayMode=${this.displayMode}`);
+        let url = `${window.location.origin}/trace?traceId=${ids[0]}&displayMode=${this.displayMode}&showLogs=${this.showLogs ? 'true' : 'false'}`;
+        copy(url);
       }
     }
 
     private mounted() {
       if (this.$route.query.displayMode) {
         this.displayMode = this.$route.query.displayMode.toString();
+      }
+      if (this.$route.query.showLogs) {
+        this.showLogs = /true/i.test(this.$route.query.showLogs.toString());
       }
     }
   }

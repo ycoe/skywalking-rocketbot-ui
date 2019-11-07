@@ -58,7 +58,6 @@ const getters = {};
 // mutations
 const mutations: MutationTree<State> = {
   [types.SET_SERVICES](state: State, data: Option[]): void {
-    console.log('123456');
     state.services = [{label: 'All', key: ''}].concat(data);
   },
   [types.SET_INSTANCES](state: State, data: Option[]): void {

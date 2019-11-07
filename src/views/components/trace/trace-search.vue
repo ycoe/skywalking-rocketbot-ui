@@ -156,6 +156,9 @@
     }
 
     private chooseService(i: any) {
+      if (!this.service) {
+        return;
+      }
       if (this.service.key === i.key) {
         return;
       }
@@ -243,7 +246,7 @@
       localStorage.removeItem('serviceId');
       this.traceState = {label: 'All', key: 'ALL'};
       this.SET_TRACE_FORM_ITEM({type: 'queryOrder', data: ''});
-      this.getTraceList();
+      this.getTraceList(true);
     }
 
     @Watch('rocketbotGlobal.durationRow')
@@ -270,12 +273,16 @@
 
     @Watch('rocketTrace.services')
     private onServicesSet(services: Option[]) {
+      if (!services || !services.length) {
+        return;
+      }
       const serviceId = this.serviceId;
       if (serviceId && services) {
-        const service = services.filter((item: any) => {
-          return item.key == serviceId;
+        const service: Option[] = services.filter((item: any) => {
+          return item && item.key == serviceId;
         });
-        if (service) {
+        if (service && service.length) {
+          console.log(service);
           this.chooseService(service[0]);
         }
       }
