@@ -25,7 +25,7 @@
         <div class="trace-logs-list">
             <template v-for="serviceNode of currentLogs">
                 <div class="log-item" v-for="item of serviceNode.logList" :class="{'error': item.event === 'error'}">
-                    <pre>{{timestampToTime(item.time)}} [{{item.event}}] {{item.logName}}<template v-if="!item.stack">{{item.message}}</template>{{item.stack}}</pre>
+                    <pre>{{timestampToTime(item.time)}} <template v-if="item.threadName">[{{item.threadName}}] </template>{{item.event.toUpperCase()}} {{item.logName}}<template v-if="!item.stack">{{item.message}}</template>{{item.stack}}</pre>
                 </div>
             </template>
         </div>

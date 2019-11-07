@@ -24,7 +24,7 @@
           <use xlink:href="#arrow-down"></use>
         </svg>
       </a>
-      <a class="rk-trace-search-btn bg-blue r mr-10" @click="getTraceList">
+      <a class="rk-trace-search-btn bg-blue r mr-10" @click="doSearch">
         <svg class="icon mr-5 vm">
           <use xlink:href="#search"></use>
         </svg>
@@ -46,6 +46,10 @@
           <div class="sm grey">{{this.$t('endpointName')}}</div>
           <input type="text" v-model="endpointName" class="rk-trace-search-input">
         </div>
+        <div class="mr-10" style="padding: 3px 15px 0">
+          <div class="sm grey">日志搜索</div>
+          <input type="text" v-model="keyword" placeholder="功能暂未实现" class="rk-trace-search-input">
+        </div>
       </div>
     </div>
     <div class="rk-trace-search-more flex-h" v-show="status">
@@ -54,7 +58,7 @@
         <input type="text" v-model="traceId" class="rk-trace-search-input dib">
       </div>
       <div class="mr-15">
-        <span class="sm b grey mr-10">{{this.$t('duration')}}:</span>
+        <span class="sm b grey mr-10">{{this.$t('duration')}}(ms):</span>
         <div class="rk-trace-search-range dib">
           <input class="vm tc" v-model="minTraceDuration">
           <span class="grey vm">-</span>
@@ -70,9 +74,9 @@
 </template>
 
 <script lang="ts">
-  import { Duration, Option } from '@/types/global';
-  import { Component, Vue, Watch } from 'vue-property-decorator';
-  import { Action, Getter, Mutation, State } from 'vuex-class';
+  import {Duration, Option} from '@/types/global';
+  import {Component, Vue, Watch} from 'vue-property-decorator';
+  import {Action, Getter, Mutation, State} from 'vuex-class';
   import TraceSelect from './trace-select.vue';
 
   @Component({components: {TraceSelect}})
@@ -92,9 +96,12 @@
     private status: boolean = true;
     private maxTraceDuration: string = localStorage.getItem('maxTraceDuration') || '';
     private minTraceDuration: string = localStorage.getItem('minTraceDuration') || '';
+    private serviceId: string = localStorage.getItem('serviceId') || '';
+    private serviceInstanceId: string = localStorage.getItem('serviceInstanceId') || '';
     private service: Option = {label: 'All', key: ''};
     private instance: Option = {label: 'All', key: ''};
     private endpointName: string = localStorage.getItem('endpointName') || '';
+    private keyword: string = localStorage.getItem('keyword') || '';
     private traceId: string = localStorage.getItem('traceId') || '';
     private traceState: Option = {label: 'All', key: 'ALL'};
 
@@ -153,6 +160,8 @@
         return;
       }
       this.instance = {label: 'All', key: ''};
+      this.serviceInstanceId = '';
+      this.serviceId = i.key;
       this.service = i;
       if (i.key === '') {
         return;
@@ -164,8 +173,23 @@
       this.traceState = i;
     }
 
-    private getTraceList() {
+    private static setQuery(params: string[], temp: any, key: string, value: any) {
+      if (value) {
+        temp[key] = value;
+        params.push(`${key}=${value}`);
+        localStorage.setItem(key, value);
+      } else {
+        localStorage.removeItem(key);
+      }
+    }
+
+    private doSearch() {
+      this.getTraceList(true);
+    }
+
+    private getTraceList(changeUrl: boolean = false) {
       this.GET_SERVICES({duration: this.durationTime});
+
       const temp: any = {
         queryDuration: this.globalTimeFormat([
           new Date(this.time[0].getTime() +
@@ -177,28 +201,19 @@
         paging: {pageNum: 1, pageSize: 15, needTotal: true},
         queryOrder: this.rocketTrace.traceForm.queryOrder,
       };
-      if (this.service.key) {
-        temp.serviceId = this.service.key;
+      let params: string[] = [];
+      TraceSearch.setQuery(params, temp, 'serviceId', this.serviceId);
+      TraceSearch.setQuery(params, temp, 'serviceInstanceId', this.serviceInstanceId);
+      TraceSearch.setQuery(params, temp, 'maxTraceDuration', this.maxTraceDuration);
+      TraceSearch.setQuery(params, temp, 'minTraceDuration', this.minTraceDuration);
+      TraceSearch.setQuery(params, temp, 'endpointName', this.endpointName);
+      TraceSearch.setQuery(params, temp, 'keyword', this.keyword);
+      TraceSearch.setQuery(params, temp, 'traceId', this.traceId);
+      if (changeUrl) {
+        let urlParams = '/trace' + (params.length ? `?${params.join('&')}` : '');
+        this.$router.push(urlParams);
       }
-      if (this.instance.key) {
-        temp.serviceInstanceId = this.instance.key;
-      }
-      if (this.maxTraceDuration) {
-        temp.maxTraceDuration = this.maxTraceDuration;
-        localStorage.setItem('maxTraceDuration', this.maxTraceDuration);
-      }
-      if (this.minTraceDuration) {
-        temp.minTraceDuration = this.minTraceDuration;
-        localStorage.setItem('minTraceDuration', this.minTraceDuration);
-      }
-      if (this.endpointName) {
-        temp.endpointName = this.endpointName;
-        localStorage.setItem('endpointName', this.endpointName);
-      }
-      if (this.traceId) {
-        temp.traceId = this.traceId;
-        localStorage.setItem('traceId', this.traceId);
-      }
+
       this.SET_TRACE_FORM(temp);
       this.$eventBus.$emit('SET_LOADING_TRUE', () => {
         this.GET_TRACELIST().then(() => {
@@ -218,8 +233,14 @@
       this.instance = {label: 'All', key: ''};
       this.endpointName = '';
       localStorage.removeItem('endpointName');
+      this.keyword = '';
+      localStorage.removeItem('keyword');
       this.traceId = '';
+      this.serviceInstanceId = '';
+      this.serviceId = '';
       localStorage.removeItem('traceId');
+      localStorage.removeItem('serviceInstanceId');
+      localStorage.removeItem('serviceId');
       this.traceState = {label: 'All', key: 'ALL'};
       this.SET_TRACE_FORM_ITEM({type: 'queryOrder', data: ''});
       this.getTraceList();
@@ -234,7 +255,63 @@
       this.time = [this.rocketbotGlobal.durationRow.start, this.rocketbotGlobal.durationRow.end];
     }
 
+    @Watch('rocketTrace.instances')
+    private onInstancesSet(instances: Option[]) {
+      const serviceInstanceId = this.$route.query.serviceInstanceId;
+      if (serviceInstanceId && instances) {
+        const instance = instances.filter((item: any) => {
+          return item.key == serviceInstanceId;
+        });
+        if (instance) {
+          this.instance = instance[0];
+        }
+      }
+    }
+
+    @Watch('rocketTrace.services')
+    private onServicesSet(services: Option[]) {
+      const serviceId = this.serviceId;
+      if (serviceId && services) {
+        const service = services.filter((item: any) => {
+          return item.key == serviceId;
+        });
+        if (service) {
+          this.chooseService(service[0]);
+        }
+      }
+    }
+
     private mounted() {
+      const serviceId = this.$route.query.serviceId;
+      if (serviceId) {
+        this.serviceId = serviceId.toString();
+      }
+
+      const serviceInstanceId = this.$route.query.serviceInstanceId;
+      if (serviceInstanceId) {
+        this.serviceInstanceId = serviceInstanceId.toString();
+      }
+
+      const maxTraceDuration = this.$route.query.maxTraceDuration;
+      if (maxTraceDuration) {
+        this.maxTraceDuration = maxTraceDuration.toString();
+      }
+
+      const minTraceDuration = this.$route.query.minTraceDuration;
+      if (minTraceDuration) {
+        this.minTraceDuration = minTraceDuration.toString();
+      }
+
+      const endpointName = this.$route.query.endpointName;
+      if (endpointName) {
+        this.endpointName = endpointName.toString();
+      }
+
+      const traceId = this.$route.query.traceId;
+      if (traceId) {
+        this.traceId = traceId.toString();
+      }
+
       this.getTraceList();
     }
   }
@@ -254,6 +331,7 @@
     outline: 0;
     padding: 2px 5px;
     border-radius: 3px;
+    width: 170px;
   }
 
   .rk-trace-search-range {

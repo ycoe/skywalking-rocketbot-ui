@@ -58,6 +58,7 @@ const getters = {};
 // mutations
 const mutations: MutationTree<State> = {
   [types.SET_SERVICES](state: State, data: Option[]): void {
+    console.log('123456');
     state.services = [{label: 'All', key: ''}].concat(data);
   },
   [types.SET_INSTANCES](state: State, data: Option[]): void {
@@ -117,6 +118,8 @@ const actions: ActionTree<State, any> = {
       .params(params)
       .then((res: AxiosResponse) => {
         context.commit(types.SET_SERVICES, res.data.data.services);
+      }).catch((e) => {
+        console.log(e);
       });
   },
   GET_INSTANCES(context: { commit: Commit }, params: any): Promise<void> {
