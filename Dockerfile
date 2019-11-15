@@ -14,32 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM apache/skywalking-base:6.4.0 AS build
-
-WORKDIR skywalking
-
-RUN set -eux; \
-    rm -rf "config"; rm -rf "oap-libs"; \
-    rm -rf "agent";
-
-COPY docker-entrypoint.sh .
-COPY logback.xml webapp/
-
-FROM openjdk:8-jre-alpine
-
-ENV JAVA_OPTS=" -Xms256M " \
-    SW_OAP_ADDRESS="oap.ip.fdd:12800" \
-    SW_TIMEOUT="20000"
-
-LABEL maintainer="hanahmily@apache.org"
-
-COPY --from=build /skywalking /skywalking
-
-WORKDIR skywalking
-
-RUN apk add --no-cache \
-    bash
-
-EXPOSE 8080
-
-ENTRYPOINT ["bash", "docker-entrypoint.sh"]
+FROM nginx
+COPY dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+RUN echo "daemon off;" >> /etc/nginx/nginx.conf
+CMD ["nginx"]
